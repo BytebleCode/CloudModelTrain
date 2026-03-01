@@ -71,14 +71,12 @@ if [[ ! -f "$SETUP_MARKER" ]]; then
     pip install --quiet -r requirements.txt
     pip install --quiet --upgrade transformers accelerate peft bitsandbytes
 
-    echo "[2/4] Installing Flash Attention 2..."
-    # Try pre-built wheel first (seconds), fall back to source compile (15 min)
+    echo "[2/4] Installing Flash Attention 2 (wheel only, no source compile)..."
     TORCH_VER=$(python -c "import torch; print(torch.__version__.split('+')[0])")
     CUDA_VER=$(python -c "import torch; print(torch.version.cuda.replace('.','')[:3])")
     echo "  Detected torch=${TORCH_VER} cuda=${CUDA_VER}"
-    pip install --quiet flash-attn 2>/dev/null || \
-    pip install --quiet flash-attn --no-build-isolation 2>/dev/null || {
-        echo "  [WARN] flash-attn install failed (training still works without it)"
+    pip install --quiet --no-build-isolation flash-attn 2>/dev/null || {
+        echo "  [WARN] No pre-built flash-attn wheel found (training still works without it)"
     }
 
     touch "$SETUP_MARKER"
