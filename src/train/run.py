@@ -14,7 +14,7 @@ from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training, Ta
 from transformers import (
     AutoModelForCausalLM,
     BitsAndBytesConfig,
-    DataCollatorForLanguageModeling,
+    DataCollatorForSeq2Seq,
     Trainer,
     TrainingArguments,
 )
@@ -139,9 +139,11 @@ def run_training(
     model.print_trainable_parameters()
 
     # --- Data collator ---
-    data_collator = DataCollatorForLanguageModeling(
+    # DataCollatorForSeq2Seq pads variable-length eval sequences correctly.
+    # DataCollatorForLanguageModeling crashes on unpadded eval batches.
+    data_collator = DataCollatorForSeq2Seq(
         tokenizer=tokenizer,
-        mlm=False,
+        padding=True,
     )
 
     # --- Training arguments ---
