@@ -97,15 +97,7 @@ print(f'    CUDA version:   {torch.version.cuda}')
 "
     echo ""
 
-    echo "[2/4] Installing Flash Attention 2 (wheel only, no source compile)..."
-    TORCH_VER=$(python -c "import torch; print(torch.__version__.split('+')[0])")
-    CUDA_VER=$(python -c "import torch; print(torch.version.cuda.replace('.','')[:3])")
-    echo "  Detected torch=${TORCH_VER} cuda=${CUDA_VER}"
-    pip install --no-build-isolation flash-attn 2>&1 | tail -3 || {
-        echo "  [WARN] No pre-built flash-attn wheel found (training still works without it)"
-    }
-    # Show flash-attn status
-    python -c "import flash_attn; print(f'  flash-attn {flash_attn.__version__} installed')" 2>/dev/null || echo "  flash-attn: NOT installed"
+    echo "[2/4] Skipping Flash Attention (not pre-installed)"
 
     touch "$SETUP_MARKER"
     echo ""
