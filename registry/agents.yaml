@@ -1,0 +1,86 @@
+# Agent Registry
+# Maps agent_name -> dataset location, formatting template, and optional overrides.
+#
+# dataset_uri: local path | s3://bucket/key | (extensible to gs://, az://)
+# format:      name of the prompt template to apply (see src/data/prepare.py)
+# fields:      mapping from template placeholders to JSONL column names
+# sha256:      optional checksum for the primary dataset file (integrity check)
+#
+# MODEL ASSIGNMENTS (from research analysis — see configs/agents/*.yaml for rationale):
+#   code_writer + test_generator:  Devstral Small 24B  (agent-first SWE base)
+#   static_reviewer + security_auditor + performance_optimizer:  Qwen3-32B  (reasoning + thinking mode)
+#   docs_generator:  Qwen2.5-Coder-7B-Instruct  (lightweight, cheap, high-volume)
+#
+# Datasets are built from real HuggingFace sources via:
+#   python scripts/build_datasets.py
+
+agents:
+  code_writer:
+    description: "Generates production Python code from specifications and requirements"
+    # Source: iamtarun/python_code_instructions_18k_alpaca (18.6k Python instruction pairs)
+    dataset_uri: "datasets/code_writer/train.jsonl"
+    eval_uri: ""
+    format: "instruction"
+    fields:
+      instruction: "instruction"
+      input: "input"
+      output: "output"
+    sha256: ""
+
+  test_generator:
+    description: "Creates comprehensive Python test suites for given code"
+    # Source: KAKA22/CodeRM-UnitTest (77k code + unit test pairs) / fallback: MBPP
+    dataset_uri: "datasets/test_generator/train.jsonl"
+    eval_uri: ""
+    format: "instruction"
+    fields:
+      instruction: "instruction"
+      input: "input"
+      output: "output"
+    sha256: ""
+
+  static_reviewer:
+    description: "Reviews Python code for quality, bugs, and style issues"
+    # Source: HuggingFaceH4/Code-Feedback (66k multi-turn conversations, Python-filtered)
+    dataset_uri: "datasets/static_reviewer/train.jsonl"
+    eval_uri: ""
+    format: "chat"
+    fields:
+      messages: "messages"
+    sha256: ""
+
+  security_auditor:
+    description: "Identifies Python security vulnerabilities and suggests fixes"
+    # Source: CyberNative/Code_Vulnerability_Security_DPO (Python-filtered DPO pairs)
+    dataset_uri: "datasets/security_auditor/train.jsonl"
+    eval_uri: ""
+    format: "instruction"
+    fields:
+      instruction: "instruction"
+      input: "input"
+      output: "output"
+    sha256: ""
+
+  performance_optimizer:
+    description: "Optimizes Python code for speed, memory, and efficiency"
+    # Source: HuggingFaceH4/Code-Feedback (optimization-filtered) + MBPP (complexity tasks)
+    dataset_uri: "datasets/performance_optimizer/train.jsonl"
+    eval_uri: ""
+    format: "instruction"
+    fields:
+      instruction: "instruction"
+      input: "input"
+      output: "output"
+    sha256: ""
+
+  docs_generator:
+    description: "Generates Python documentation, docstrings, and API references"
+    # Source: Nan-Do/code-search-net-python (455k Python function + docstring pairs)
+    dataset_uri: "datasets/docs_generator/train.jsonl"
+    eval_uri: ""
+    format: "instruction"
+    fields:
+      instruction: "instruction"
+      input: "input"
+      output: "output"
+    sha256: ""

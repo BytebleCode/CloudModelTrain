@@ -1,0 +1,28 @@
+# docs_generator — docstring, API reference, and documentation generation
+#
+# BASE MODEL: Qwen2.5-Coder-7B-Instruct — Apache-2.0
+#   "Docs generator / changelog bot: Qwen2.5-Coder-7B-Instruct or Qwen3-8B.
+#    These smaller Apache-2.0 models are easy to tune on your style guide
+#    and can run cheaply and frequently." — Research analysis
+#
+#   Docs generation is high-volume but not reasoning-heavy. A 7B model:
+#   - Fine-tunes in minutes, not hours
+#   - Runs cheaply at inference (important for CI/CD integration)
+#   - Still strong on code understanding (code-specialist pretraining)
+#
+# 7B on A100 80GB with QLoRA: batch_size=8, very fast training.
+
+model:
+  name_or_path: "Qwen/Qwen2.5-Coder-7B-Instruct"
+  trust_remote_code: true
+
+training:
+  max_seq_length: 2048
+  per_device_train_batch_size: 8
+  per_device_eval_batch_size: 8
+  gradient_accumulation_steps: 2
+  learning_rate: 2.5e-4
+  num_train_epochs: 3
+
+packing:
+  enabled: true

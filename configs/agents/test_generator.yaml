@@ -1,0 +1,19 @@
+# test_generator — creates comprehensive Python test suites
+#
+# BASE MODEL: Devstral Small (24B) — Apache-2.0
+#   "Same base as engineer unless you have a strong reason to split. In SWE
+#    training pipelines, one base + multiple LoRA heads is usually lower-friction
+#    than maintaining separate language models for code and tests." — Research analysis
+#
+# Uses the base.yaml default (Devstral Small) — no model override needed.
+# Shares the base with code_writer: one model, two LoRA adapters.
+
+training:
+  max_seq_length: 2048
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 8
+  learning_rate: 2.0e-4
+  num_train_epochs: 3
+
+packing:
+  enabled: true

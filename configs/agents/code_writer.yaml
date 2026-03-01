@@ -1,0 +1,22 @@
+# code_writer — generates production Python code from specs
+#
+# BASE MODEL: Devstral Small (24B) — Apache-2.0
+#   "Purpose-built for tool-using SWE, long context (256k), explicit agent/tool
+#    orientation. Best default SWE-agent base." — Research analysis
+#   This is also the recommended "primary engineer" base for multi-file edits + tests + git.
+#
+# Uses the base.yaml default (Devstral Small) — no model override needed.
+# Longer context for full function/class generation.
+
+training:
+  max_seq_length: 4096
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 8
+  learning_rate: 2.0e-4
+  num_train_epochs: 3
+
+packing:
+  enabled: true
+
+lora:
+  r: 64
