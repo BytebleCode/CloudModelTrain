@@ -1,38 +1,49 @@
-# Dockerfile for building a custom RunPod template with all deps + datasets pre-baked.
+# Pre-built training image: all deps + flash-attn + datasets baked in.
+# Pods start training immediately — zero setup time.
 #
-# Usage:
-#   docker build -t my-training-image -f runpod/Dockerfile .
-#   docker push <your-registry>/cloudmodeltrain:latest
-#   # Then use as custom RunPod template — zero setup, just train.
+# Build:
+#   docker build -t <your-dockerhub>/cloudmodeltrain:latest -f runpod/Dockerfile .
+#   docker push <your-dockerhub>/cloudmodeltrain:latest
 #
-# Based on RunPod's PyTorch image (CUDA 12.1 + Python 3.10).
+# On RunPod: use as custom template, then just run:
+#   cd /workspace/CloudModelTrain && bash runpod/go.sh code_writer --flash_attn
 
-FROM runpod/pytorch:2.2.0-py3.10-cuda12.1.1-devel-ubuntu22.04
+FROM runpod/pytorch:2.4.1-py3.11-cuda12.4.1-devel-ubuntu22.04
 
 WORKDIR /workspace/CloudModelTrain
+
+# Redirect caches to /workspace (persists on RunPod volumes)
+ENV HF_HOME=/workspace/.cache/huggingface
+ENV TRANSFORMERS_CACHE=/workspace/.cache/huggingface/hub
+ENV PIP_CACHE_DIR=/workspace/.cache/pip
+ENV TMPDIR=/workspace/tmp
 
 # System deps
 RUN apt-get update -qq && \
     apt-get install -y -qq git-lfs && \
     rm -rf /var/lib/apt/lists/*
 
-# Python deps (cached layer — only rebuilds if requirements.txt changes)
-COPY requirements.txt .
+# Upgrade torch first (base for everything else)
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir --upgrade torch torchvision torchaudio
 
-# Flash Attention 2 (cached layer — big speed boost on A100)
+# Python deps
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir --upgrade transformers accelerate peft bitsandbytes
+
+# Flash Attention 2 (pre-compiled = no 15 min wait on pod startup)
 RUN pip install --no-cache-dir flash-attn --no-build-isolation || true
 
 # Copy project
 COPY . .
 
-# Build datasets into the image so pods start training immediately
-RUN python scripts/build_datasets.py && \
-    touch .setup_done .datasets_done
+# Build datasets into image
+RUN mkdir -p /workspace/tmp && \
+    python scripts/build_datasets.py && \
+    touch .setup_done_v4 .datasets_done
 
-# Create output dirs
-RUN mkdir -p data_cache outputs
+# Create dirs
+RUN mkdir -p data_cache outputs /workspace/.cache/huggingface /workspace/.cache/pip /workspace/tmp
 
-# Default: show usage
-CMD ["bash", "-c", "echo 'Usage: bash runpod/go.sh [agent_name] [--flash_attn]' && echo '' && python train.py --help"]
+CMD ["bash", "-c", "echo 'Ready. Run: bash runpod/go.sh code_writer --flash_attn' && bash"]
