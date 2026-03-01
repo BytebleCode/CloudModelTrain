@@ -38,10 +38,18 @@ def load_base_config() -> dict:
     return load_yaml(CONFIGS_DIR / "base.yaml")
 
 
-def load_agent_config(agent_name: str) -> dict:
-    path = CONFIGS_DIR / "agents" / f"{agent_name}.yaml"
+def load_agent_config(agent_name: str, variant: str | None = None) -> dict:
+    if variant:
+        path = CONFIGS_DIR / "agents" / variant / f"{agent_name}.yaml"
+    else:
+        path = CONFIGS_DIR / "agents" / f"{agent_name}.yaml"
     if path.exists():
         return load_yaml(path)
+    if variant:
+        raise ValueError(
+            f"No config for agent '{agent_name}' with variant '{variant}'. "
+            f"Expected: {path}"
+        )
     return {}
 
 
@@ -73,6 +81,7 @@ def resolve_config(
     run_name: str | None = None,
     cli_overrides: dict[str, Any] | None = None,
     gpu_profile: str | None = None,
+    variant: str | None = None,
 ) -> dict:
     """Build the final merged config for a training run."""
 
@@ -89,7 +98,7 @@ def resolve_config(
     # code_writer.yaml's batch_size=2).
     cfg = load_base_config()
 
-    agent_cfg = load_agent_config(agent_name)
+    agent_cfg = load_agent_config(agent_name, variant=variant)
     _deep_merge(cfg, agent_cfg)
 
     if gpu_profile:
@@ -103,6 +112,8 @@ def resolve_config(
     # --- attach registry info ---
     agent_reg = registry[agent_name]
     cfg["agent_name"] = agent_name
+    if variant:
+        cfg["variant"] = variant
     cfg["agent_registry"] = agent_reg
 
     # --- resolve output dir ---

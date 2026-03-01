@@ -1,0 +1,18 @@
+# docs_generator (3060 variant) — docstring, API reference, documentation
+#
+# BASE MODEL: Qwen2.5-Coder-14B-Instruct — Apache-2.0
+#   Unified base for all 7 agents: one model + 7 LoRA adapters on RTX 3060.
+
+model:
+  name_or_path: "Qwen/Qwen2.5-Coder-14B-Instruct"
+  trust_remote_code: true
+
+training:
+  max_seq_length: 2048
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 8
+  learning_rate: 2.5e-4
+  num_train_epochs: 3
+
+packing:
+  enabled: true

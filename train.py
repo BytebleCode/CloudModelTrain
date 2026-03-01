@@ -78,6 +78,11 @@ def parse_args() -> argparse.Namespace:
         help="GPU profile name (e.g. a100_80gb, h200_sxm). Loads configs/gpu/<name>.yaml",
     )
     parser.add_argument(
+        "--variant",
+        default=None,
+        help="Config variant (e.g. 3060). Loads from configs/agents/<variant>/ instead of configs/agents/",
+    )
+    parser.add_argument(
         "--flash_attn",
         action="store_true",
         help="Enable Flash Attention 2",
@@ -177,9 +182,11 @@ def main():
     from src.config import resolve_config, save_config_snapshot
 
     cli_overrides = build_cli_overrides(args)
-    cfg = resolve_config(args.agent, args.run_name, cli_overrides, gpu_profile=args.gpu)
+    cfg = resolve_config(args.agent, args.run_name, cli_overrides, gpu_profile=args.gpu, variant=args.variant)
 
     logger.info("Agent: %s", args.agent)
+    if args.variant:
+        logger.info("Variant: %s", args.variant)
     logger.info("GPU profile: %s", cfg.get("gpu_profile", "none (base defaults)"))
     logger.info("Run name: %s", cfg["run_name"])
     logger.info("Output dir: %s", cfg["output_dir"])

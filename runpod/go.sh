@@ -33,6 +33,7 @@ fi
 AGENT=""
 TRAIN_ALL=false
 GPU_PROFILE=""
+VARIANT=""
 EXTRA_FLAGS=()
 
 while [[ $# -gt 0 ]]; do
@@ -56,6 +57,15 @@ while [[ $# -gt 0 ]]; do
                 shift 2
             else
                 echo "ERROR: --gpu requires a profile name (e.g. a100_80gb, h200_sxm)"
+                exit 1
+            fi
+            ;;
+        --variant)
+            if [[ $# -gt 1 && ! "$2" =~ ^-- ]]; then
+                VARIANT="$2"
+                shift 2
+            else
+                echo "ERROR: --variant requires a name (e.g. 3060)"
                 exit 1
             fi
             ;;
@@ -91,6 +101,7 @@ echo ""
 echo "  Project dir: $PROJECT_DIR"
 echo "  HF cache:    $HF_HOME"
 echo "  Agent:       ${AGENT:-ALL}"
+[[ -n "$VARIANT" ]] && echo "  Variant:     $VARIANT"
 echo ""
 
 # ---- Step 1: Install deps (skip if already done) ----
@@ -211,6 +222,11 @@ fi
 if [[ -n "$GPU_PROFILE" ]]; then
     EXTRA_FLAGS+=(--gpu "$GPU_PROFILE")
     echo "  GPU profile: $GPU_PROFILE"
+fi
+
+if [[ -n "$VARIANT" ]]; then
+    EXTRA_FLAGS+=(--variant "$VARIANT")
+    echo "  Variant: $VARIANT"
 fi
 
 # Show disk space

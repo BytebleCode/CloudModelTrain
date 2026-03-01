@@ -1,0 +1,21 @@
+# performance_optimizer (3060 variant) — Python code optimization
+#
+# BASE MODEL: Qwen2.5-Coder-14B-Instruct — Apache-2.0
+#   Unified base for all 7 agents: one model + 7 LoRA adapters on RTX 3060.
+
+model:
+  name_or_path: "Qwen/Qwen2.5-Coder-14B-Instruct"
+  trust_remote_code: true
+
+training:
+  max_seq_length: 4096
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 8
+  learning_rate: 2.0e-4
+  num_train_epochs: 10
+  save_steps: 25
+  eval_steps: 25
+  logging_steps: 5
+
+packing:
+  enabled: true
