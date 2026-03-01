@@ -16,6 +16,11 @@ set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_DIR"
 
+# ---- Redirect HF cache to volume (not container disk) ----
+export HF_HOME="/workspace/.cache/huggingface"
+export TRANSFORMERS_CACHE="/workspace/.cache/huggingface/hub"
+mkdir -p "$HF_HOME"
+
 # ---- Parse args ----
 AGENT=""
 TRAIN_ALL=false
