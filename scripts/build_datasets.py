@@ -339,36 +339,11 @@ def build_performance_optimizer(max_samples: int | None = None) -> int:
     except Exception as e:
         logger.warning("Code-Feedback optimization extraction failed: %s", e)
 
-    # --- Strategy 2: MBPP problems reformatted as optimization tasks ---
-    logger.info("Loading mbpp for optimization reformatting...")
-    try:
-        ds = load_dataset("google-research-datasets/mbpp", "full", split="train")
-        for row in ds:
-            code = (row.get("code") or "").strip()
-            text = (row.get("text") or "").strip()
-            if not code or not text:
-                continue
-            # Only include solutions that have loops or recursion (optimization targets)
-            if not any(kw in code for kw in ["for ", "while ", "def ", "lambda"]):
-                continue
-
-            records.append({
-                "instruction": (
-                    "Review this Python code for performance. Analyze time and space complexity, "
-                    "identify bottlenecks, and suggest an optimized implementation."
-                ),
-                "input": f"## Task\n{text}\n\n## Current Implementation\n```python\n{code}\n```",
-                "output": (
-                    f"## Performance Analysis\n"
-                    f"The current implementation solves: {text}\n\n"
-                    f"## Optimized Implementation\n```python\n{code}\n```\n\n"
-                    f"## Notes\n"
-                    f"- Analyzed time/space complexity\n"
-                    f"- Consider edge cases and input size scaling"
-                ),
-            })
-    except Exception as e:
-        logger.warning("MBPP optimization extraction failed: %s", e)
+    # Note: MBPP was previously used here but produced fake optimization pairs
+    # (same code as input and output). Removed — only real optimization
+    # conversations from Code-Feedback are used now.
+    if not records:
+        logger.warning("No optimization records found from Code-Feedback")
 
     random.shuffle(records)
     if max_samples:
@@ -443,11 +418,14 @@ def _strip_docstring(code: str) -> str:
     for line in lines:
         stripped = line.strip()
         if not found_docstring and not in_docstring:
-            if stripped.startswith('"""') or stripped.startswith("'''"):
-                docstring_char = stripped[:3]
+            # Handle r""", u""", b""" prefixes and both quote styles
+            check = stripped.lstrip("rRuUbB")
+            if check.startswith('"""') or check.startswith("'''"):
+                docstring_char = check[:3]
                 in_docstring = True
-                # Single-line docstring
-                if stripped.count(docstring_char) >= 2:
+                # Single-line docstring: """text""" on one line
+                rest_after_open = check[3:]
+                if docstring_char in rest_after_open:
                     in_docstring = False
                     found_docstring = True
                 continue

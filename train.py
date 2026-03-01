@@ -190,7 +190,7 @@ def main():
     if not args.skip_pull:
         from src.data.pull import pull_dataset
 
-        logger.info("Pulling dataset: %s", dataset_uri)
+        logger.info("Resolving dataset: %s", dataset_uri)
         train_data_path = pull_dataset(dataset_uri, data_cache_dir)
         logger.info("Train data ready: %s", train_data_path)
 
@@ -246,7 +246,7 @@ def main():
     # --- Train ---
     from src.train.run import run_training
 
-    output_path = run_training(cfg, dataset, resume_from=args.resume)
+    output_path = run_training(cfg, dataset, tokenizer=tokenizer, resume_from=args.resume)
 
     logger.info("=" * 60)
     logger.info("Training complete!")

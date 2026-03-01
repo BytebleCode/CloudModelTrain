@@ -57,7 +57,6 @@ training:
   gradient_checkpointing: true
   optim: "paged_adamw_32bit"
   max_grad_norm: 0.3
-  group_by_length: false
   dataloader_num_workers: 4
   dataloader_pin_memory: true
   report_to: "tensorboard"

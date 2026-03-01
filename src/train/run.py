@@ -13,7 +13,6 @@ from datasets import DatasetDict
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training, TaskType
 from transformers import (
     AutoModelForCausalLM,
-    AutoTokenizer,
     BitsAndBytesConfig,
     DataCollatorForLanguageModeling,
     Trainer,
@@ -48,9 +47,9 @@ def _build_lora_config(cfg: dict) -> LoraConfig:
     )
 
 
-def _build_training_args(cfg: dict, output_dir: str) -> TrainingArguments:
+def _build_training_args(cfg: dict, output_dir: str, has_eval: bool = True) -> TrainingArguments:
     tcfg = cfg["training"]
-    return TrainingArguments(
+    kwargs = dict(
         output_dir=output_dir,
         num_train_epochs=tcfg["num_train_epochs"],
         per_device_train_batch_size=tcfg["per_device_train_batch_size"],
@@ -62,8 +61,6 @@ def _build_training_args(cfg: dict, output_dir: str) -> TrainingArguments:
         lr_scheduler_type=tcfg["lr_scheduler_type"],
         logging_steps=tcfg["logging_steps"],
         save_steps=tcfg["save_steps"],
-        eval_steps=tcfg["eval_steps"],
-        eval_strategy="steps",
         save_total_limit=tcfg["save_total_limit"],
         fp16=tcfg["fp16"],
         bf16=tcfg["bf16"],
@@ -72,25 +69,37 @@ def _build_training_args(cfg: dict, output_dir: str) -> TrainingArguments:
         gradient_checkpointing_kwargs={"use_reentrant": False},
         optim=tcfg["optim"],
         max_grad_norm=tcfg["max_grad_norm"],
-        group_by_length=tcfg["group_by_length"],
         dataloader_num_workers=tcfg["dataloader_num_workers"],
         dataloader_pin_memory=tcfg["dataloader_pin_memory"],
         report_to=tcfg["report_to"],
-        load_best_model_at_end=True,
-        metric_for_best_model="eval_loss",
-        greater_is_better=False,
         save_safetensors=True,
         seed=cfg.get("data", {}).get("seed", 42),
     )
+
+    if has_eval:
+        kwargs["eval_steps"] = tcfg["eval_steps"]
+        kwargs["eval_strategy"] = "steps"
+        kwargs["load_best_model_at_end"] = True
+        kwargs["metric_for_best_model"] = "eval_loss"
+        kwargs["greater_is_better"] = False
+
+    return TrainingArguments(**kwargs)
 
 
 def run_training(
     cfg: dict,
     dataset: DatasetDict,
+    tokenizer,
     resume_from: str | None = None,
 ) -> Path:
     """
     Execute QLoRA fine-tuning.
+
+    Args:
+        cfg: Resolved config dict.
+        dataset: DatasetDict with 'train' and 'eval' splits.
+        tokenizer: Pre-loaded tokenizer (avoids double-load issues with Devstral/Tekken).
+        resume_from: Optional checkpoint path to resume from.
 
     Returns:
         Path to the output directory containing the final adapter.
@@ -104,17 +113,6 @@ def run_training(
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
 
-    # --- Tokenizer ---
-    logger.info("Loading tokenizer: %s", model_name)
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_name,
-        trust_remote_code=cfg["model"].get("trust_remote_code", False),
-        use_fast=True,
-    )
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
-        tokenizer.pad_token_id = tokenizer.eos_token_id
-
     # --- Quantized model ---
     logger.info("Loading model with 4-bit quantization: %s", model_name)
     bnb_config = _build_bnb_config(cfg)
@@ -124,7 +122,7 @@ def run_training(
         quantization_config=bnb_config,
         device_map="auto",
         trust_remote_code=cfg["model"].get("trust_remote_code", False),
-        torch_dtype=torch.bfloat16,
+        dtype=torch.bfloat16,
     )
     if flash_attn:
         model_kwargs["attn_implementation"] = "flash_attention_2"
@@ -148,22 +146,24 @@ def run_training(
     )
 
     # --- Training arguments ---
-    training_args = _build_training_args(cfg, output_dir)
+    has_eval = "eval" in dataset and len(dataset["eval"]) > 0
+    training_args = _build_training_args(cfg, output_dir, has_eval=has_eval)
 
     # --- Callbacks ---
     callbacks = [
-        EvalLossDivergenceCallback(threshold=1.5, patience=3),
         CostEstimatorCallback(
             gpu_hour_price=cfg.get("cost", {}).get("gpu_hour_price", 1.10)
         ),
     ]
+    if has_eval:
+        callbacks.append(EvalLossDivergenceCallback(threshold=1.5, patience=3))
 
     # --- Trainer ---
     trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=dataset["train"],
-        eval_dataset=dataset["eval"],
+        eval_dataset=dataset.get("eval"),
         data_collator=data_collator,
         callbacks=callbacks,
     )

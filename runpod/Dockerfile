@@ -41,7 +41,7 @@ COPY . .
 # Build datasets into image
 RUN mkdir -p /workspace/tmp && \
     python scripts/build_datasets.py && \
-    touch .setup_done_v4 .datasets_done
+    touch .setup_done_v6 .datasets_done
 
 # Create dirs
 RUN mkdir -p data_cache outputs /workspace/.cache/huggingface /workspace/.cache/pip /workspace/tmp

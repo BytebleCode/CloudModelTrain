@@ -23,7 +23,7 @@ AGENTS=(
 
 echo "============================================"
 echo "  Training all ${#AGENTS[@]} agents"
-echo "  Extra flags: ${EXTRA_FLAGS[*]:-none}"
+if [[ ${#EXTRA_FLAGS[@]} -gt 0 ]]; then echo "  Extra flags: ${EXTRA_FLAGS[*]}"; else echo "  Extra flags: none"; fi
 echo "============================================"
 echo ""
 

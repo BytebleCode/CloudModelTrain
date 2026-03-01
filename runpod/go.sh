@@ -21,6 +21,14 @@ export HF_HOME="/workspace/.cache/huggingface"
 export TRANSFORMERS_CACHE="/workspace/.cache/huggingface/hub"
 mkdir -p "$HF_HOME"
 
+# ---- HuggingFace token (set via env or pass --hf_token <token>) ----
+# Export HF_TOKEN before running, or pass --hf_token as an argument.
+# e.g.: HF_TOKEN=hf_xxx bash runpod/go.sh code_writer
+# e.g.: bash runpod/go.sh code_writer --hf_token hf_xxx
+if [[ -n "${HF_TOKEN:-}" ]]; then
+    echo "  HF_TOKEN: set (authenticated)"
+fi
+
 # ---- Parse args ----
 AGENT=""
 TRAIN_ALL=false
@@ -31,6 +39,15 @@ while [[ $# -gt 0 ]]; do
         --all)
             TRAIN_ALL=true
             shift
+            ;;
+        --hf_token)
+            if [[ $# -gt 1 ]]; then
+                export HF_TOKEN="$2"
+                shift 2
+            else
+                echo "ERROR: --hf_token requires a value"
+                exit 1
+            fi
             ;;
         --flash_attn|--lr|--epochs|--batch_size|--max_seq_length|--resume|--model)
             EXTRA_FLAGS+=("$1")

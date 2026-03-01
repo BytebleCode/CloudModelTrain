@@ -27,6 +27,7 @@ def _resolve_local(uri: str, cache_dir: Path) -> Path:
     p = Path(uri)
     if not p.exists():
         raise FileNotFoundError(f"Local dataset path does not exist: {uri}")
+    logger.info("Using local dataset: %s", p)
     return p
 
 

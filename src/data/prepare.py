@@ -147,8 +147,9 @@ def prepare_dataset(
     # --- Packing (optional) ---
     if packing:
         logger.info("Packing sequences to max_seq_length=%d", max_seq_length)
+        eos_id = tokenizer.eos_token_id or 0
         ds_dict["train"] = _pack_dataset(
-            ds_dict["train"], max_seq_length, tokenizer.pad_token_id or 0
+            ds_dict["train"], max_seq_length, eos_id
         )
 
     return ds_dict
@@ -157,11 +158,13 @@ def prepare_dataset(
 def _pack_dataset(
     dataset: Dataset,
     max_seq_length: int,
-    pad_token_id: int,
+    eos_token_id: int,
 ) -> Dataset:
     """
-    Concatenate tokenized samples end-to-end, then chunk into fixed-length
-    sequences. This eliminates padding waste for short samples.
+    Concatenate tokenized samples with EOS separators, then chunk into
+    fixed-length sequences. Labels are set to -100 at sample boundaries
+    (the EOS separator token) so the model doesn't learn to predict
+    across unrelated samples.
     """
     all_input_ids = []
     all_attention_mask = []
@@ -172,6 +175,12 @@ def _pack_dataset(
     buffer_labels: list[int] = []
 
     for row in dataset:
+        # Insert EOS separator between samples
+        if buffer_ids:
+            buffer_ids.append(eos_token_id)
+            buffer_mask.append(1)
+            buffer_labels.append(-100)  # mask boundary token
+
         buffer_ids.extend(row["input_ids"])
         buffer_mask.extend(row["attention_mask"])
         buffer_labels.extend(row["labels"])
