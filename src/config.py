@@ -1,7 +1,7 @@
 """
 Configuration loader.
 
-Merges: base.yaml  <-  agents/<agent>.yaml  <-  CLI overrides
+Merges: base.yaml  <-  gpu/<profile>.yaml  <-  agents/<agent>.yaml  <-  CLI overrides
 Produces a single flat-ish dict consumed by every other module.
 """
 
@@ -47,6 +47,24 @@ def load_agent_config(agent_name: str) -> dict:
     return {}
 
 
+def load_gpu_profile(profile_name: str, agent_name: str | None = None) -> dict:
+    """Load a GPU profile and extract agent-specific overrides if present."""
+    path = CONFIGS_DIR / "gpu" / f"{profile_name}.yaml"
+    if not path.exists():
+        available = [p.stem for p in (CONFIGS_DIR / "gpu").glob("*.yaml")]
+        raise ValueError(
+            f"Unknown GPU profile '{profile_name}'. Available: {', '.join(available)}"
+        )
+    data = load_yaml(path)
+
+    # Extract agent-specific overrides from the gpu profile
+    agent_overrides = data.pop("agent_overrides", {})
+    if agent_name and agent_name in agent_overrides:
+        _deep_merge(data, agent_overrides[agent_name])
+
+    return data
+
+
 def load_registry() -> dict:
     data = load_yaml(REGISTRY_PATH)
     return data.get("agents", {})
@@ -56,6 +74,7 @@ def resolve_config(
     agent_name: str,
     run_name: str | None = None,
     cli_overrides: dict[str, Any] | None = None,
+    gpu_profile: str | None = None,
 ) -> dict:
     """Build the final merged config for a training run."""
 
@@ -66,8 +85,14 @@ def resolve_config(
             f"Unknown agent '{agent_name}'. Available: {available}"
         )
 
-    # --- merge configs ---
+    # --- merge configs: base <- gpu <- agent <- CLI ---
     cfg = load_base_config()
+
+    if gpu_profile:
+        gpu_cfg = load_gpu_profile(gpu_profile, agent_name)
+        _deep_merge(cfg, gpu_cfg)
+        cfg["gpu_profile"] = gpu_profile
+
     agent_cfg = load_agent_config(agent_name)
     _deep_merge(cfg, agent_cfg)
 

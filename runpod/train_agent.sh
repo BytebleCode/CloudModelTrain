@@ -5,6 +5,7 @@
 #   bash runpod/train_agent.sh code_writer
 #   bash runpod/train_agent.sh security_auditor my_run_v2
 #   bash runpod/train_agent.sh code_writer "" --flash_attn --lr 1e-4
+#   bash runpod/train_agent.sh code_writer "" --gpu h200_sxm
 #
 # This script:
 #   1. Verifies GPU is available

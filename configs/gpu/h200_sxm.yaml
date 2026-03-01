@@ -1,0 +1,48 @@
+# GPU Profile: NVIDIA H200 SXM 141GB
+# Higher VRAM allows larger batch sizes -> fewer gradient accumulation steps.
+# Faster training throughput with HBM3e bandwidth.
+
+gpu:
+  name: "H200 SXM 141GB"
+  vram_gb: 141
+  architecture: "Hopper"
+
+cost:
+  gpu_hour_price: 3.29    # $/hr RunPod H200 SXM (spot)
+
+# Per-agent training overrides for H200 VRAM budget
+agent_overrides:
+  code_writer:            # Devstral 24B (~14GB Q4)
+    training:
+      per_device_train_batch_size: 4
+      gradient_accumulation_steps: 4
+
+  test_generator:         # Devstral 24B (~14GB Q4)
+    training:
+      per_device_train_batch_size: 4
+      gradient_accumulation_steps: 4
+
+  static_reviewer:        # Qwen3-32B (~18GB Q4)
+    training:
+      per_device_train_batch_size: 2
+      gradient_accumulation_steps: 8
+
+  security_auditor:       # Qwen3-32B (~18GB Q4)
+    training:
+      per_device_train_batch_size: 2
+      gradient_accumulation_steps: 2
+
+  performance_optimizer:  # Qwen3-32B (~18GB Q4)
+    training:
+      per_device_train_batch_size: 2
+      gradient_accumulation_steps: 2
+
+  docs_generator:         # Qwen2.5-7B (~4GB Q4)
+    training:
+      per_device_train_batch_size: 16
+      gradient_accumulation_steps: 1
+
+  orchestrator:           # gpt-oss-20b MoE (~12GB Q4)
+    training:
+      per_device_train_batch_size: 4
+      gradient_accumulation_steps: 4

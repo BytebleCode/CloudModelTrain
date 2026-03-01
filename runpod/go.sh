@@ -32,6 +32,7 @@ fi
 # ---- Parse args ----
 AGENT=""
 TRAIN_ALL=false
+GPU_PROFILE=""
 EXTRA_FLAGS=()
 
 while [[ $# -gt 0 ]]; do
@@ -46,6 +47,15 @@ while [[ $# -gt 0 ]]; do
                 shift 2
             else
                 echo "ERROR: --hf_token requires a value"
+                exit 1
+            fi
+            ;;
+        --gpu)
+            if [[ $# -gt 1 && ! "$2" =~ ^-- ]]; then
+                GPU_PROFILE="$2"
+                shift 2
+            else
+                echo "ERROR: --gpu requires a profile name (e.g. a100_80gb, h200_sxm)"
                 exit 1
             fi
             ;;
@@ -179,6 +189,29 @@ for i in range(torch.cuda.device_count()):
 print(f'  BF16 supported: {torch.cuda.is_bf16_supported()}')
 print(f'  TF32 supported: {torch.backends.cuda.matmul.allow_tf32}')
 "
+
+# ---- Auto-detect GPU profile if not specified ----
+if [[ -z "$GPU_PROFILE" ]]; then
+    GPU_NAME=$(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -1 || echo "unknown")
+    case "$GPU_NAME" in
+        *H200*)
+            GPU_PROFILE="h200_sxm"
+            echo "  Auto-detected GPU profile: h200_sxm (from: $GPU_NAME)"
+            ;;
+        *A100*)
+            GPU_PROFILE="a100_80gb"
+            echo "  Auto-detected GPU profile: a100_80gb (from: $GPU_NAME)"
+            ;;
+        *)
+            echo "  No matching GPU profile for: $GPU_NAME (using base defaults)"
+            ;;
+    esac
+fi
+
+if [[ -n "$GPU_PROFILE" ]]; then
+    EXTRA_FLAGS+=(--gpu "$GPU_PROFILE")
+    echo "  GPU profile: $GPU_PROFILE"
+fi
 
 # Show disk space
 echo ""

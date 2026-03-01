@@ -1,0 +1,35 @@
+# orchestrator — resource-aware dispatcher that coordinates specialist agents
+#
+# BASE MODEL: gpt-oss-20b (Apache-2.0)
+#   MoE architecture: 21B total / 3.6B active params
+#   Designed for agentic workflows + Structured Outputs (JSON-mode)
+#   Efficient inference due to sparse activation
+#
+# Longer context (8192) for multi-turn planning with resource state.
+# Packing disabled — chat format with variable-length conversations.
+
+model:
+  name_or_path: "openai-community/gpt-oss-20b"
+  trust_remote_code: true
+
+training:
+  max_seq_length: 8192
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 8
+  learning_rate: 2.0e-4
+  num_train_epochs: 3
+
+packing:
+  enabled: false
+
+lora:
+  r: 64
+  lora_alpha: 16
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"

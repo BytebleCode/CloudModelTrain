@@ -5,6 +5,7 @@ CLI entrypoint for agent-specialized QLoRA fine-tuning.
 Usage:
     python train.py --agent code_writer
     python train.py --agent security_auditor --run_name sec_v2
+    python train.py --agent orchestrator --gpu h200_sxm
     python train.py --agent test_generator --resume outputs/test_generator/checkpoint-400
 """
 
@@ -25,7 +26,7 @@ logger = logging.getLogger("train")
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Fine-tune a specialized coding-agent model (QLoRA on A100)",
+        description="Fine-tune a specialized coding-agent model (QLoRA)",
     )
     parser.add_argument(
         "--agent",
@@ -70,6 +71,11 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=None,
         help="Override max sequence length",
+    )
+    parser.add_argument(
+        "--gpu",
+        default=None,
+        help="GPU profile name (e.g. a100_80gb, h200_sxm). Loads configs/gpu/<name>.yaml",
     )
     parser.add_argument(
         "--flash_attn",
@@ -171,9 +177,10 @@ def main():
     from src.config import resolve_config, save_config_snapshot
 
     cli_overrides = build_cli_overrides(args)
-    cfg = resolve_config(args.agent, args.run_name, cli_overrides)
+    cfg = resolve_config(args.agent, args.run_name, cli_overrides, gpu_profile=args.gpu)
 
     logger.info("Agent: %s", args.agent)
+    logger.info("GPU profile: %s", cfg.get("gpu_profile", "none (base defaults)"))
     logger.info("Run name: %s", cfg["run_name"])
     logger.info("Output dir: %s", cfg["output_dir"])
 

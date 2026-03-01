@@ -442,6 +442,20 @@ def _strip_docstring(code: str) -> str:
 
 
 # ============================================================================
+# orchestrator: SWE trajectories + function-calling + task decomposition + synthetic
+# ============================================================================
+
+def build_orchestrator(max_samples: int | None = None) -> int:
+    """
+    Resource-aware agent orchestrator training data.
+    Delegates to scripts/generate_orchestrator_data.py for the heavy lifting.
+    """
+    from scripts.generate_orchestrator_data import build_orchestrator_dataset
+
+    return build_orchestrator_dataset(max_samples=max_samples)
+
+
+# ============================================================================
 # Builder registry
 # ============================================================================
 
@@ -452,6 +466,7 @@ BUILDERS = {
     "security_auditor": build_security_auditor,
     "performance_optimizer": build_performance_optimizer,
     "docs_generator": build_docs_generator,
+    "orchestrator": build_orchestrator,
 }
 
 
@@ -461,7 +476,7 @@ def main():
     )
     parser.add_argument(
         "--agent",
-        choices=list(BUILDERS.keys()),
+        choices=sorted(BUILDERS.keys()),
         default=None,
         help="Build dataset for a specific agent (default: all)",
     )

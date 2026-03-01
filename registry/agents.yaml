@@ -10,6 +10,7 @@
 #   code_writer + test_generator:  Devstral Small 24B  (agent-first SWE base)
 #   static_reviewer + security_auditor + performance_optimizer:  Qwen3-32B  (reasoning + thinking mode)
 #   docs_generator:  Qwen2.5-Coder-7B-Instruct  (lightweight, cheap, high-volume)
+#   orchestrator:  gpt-oss-20b  (MoE 21B/3.6B active, agentic workflows + structured outputs)
 #
 # Datasets are built from real HuggingFace sources via:
 #   python scripts/build_datasets.py
@@ -83,4 +84,15 @@ agents:
       instruction: "instruction"
       input: "input"
       output: "output"
+    sha256: ""
+
+  orchestrator:
+    description: "Resource-aware dispatcher that coordinates specialist agents, manages GPU/VRAM, and cost-optimizes execution"
+    # Source: SWE trajectories + function-calling + task decomposition + synthetic resource mgmt
+    # Built by: python scripts/generate_orchestrator_data.py
+    dataset_uri: "datasets/orchestrator/train.jsonl"
+    eval_uri: ""
+    format: "chat"
+    fields:
+      messages: "messages"
     sha256: ""

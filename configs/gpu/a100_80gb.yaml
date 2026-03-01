@@ -1,0 +1,48 @@
+# GPU Profile: NVIDIA A100 PCIe 80GB
+# Default profile — matches base.yaml training defaults.
+# Explicit per-agent batch sizes for A100 VRAM budget.
+
+gpu:
+  name: "A100 PCIe 80GB"
+  vram_gb: 80
+  architecture: "Ampere"
+
+cost:
+  gpu_hour_price: 1.14    # $/hr RunPod A100 PCIe 80GB (spot)
+
+# Per-agent training overrides for A100 VRAM constraints
+agent_overrides:
+  code_writer:            # Devstral 24B (~14GB Q4)
+    training:
+      per_device_train_batch_size: 2
+      gradient_accumulation_steps: 8
+
+  test_generator:         # Devstral 24B (~14GB Q4)
+    training:
+      per_device_train_batch_size: 2
+      gradient_accumulation_steps: 8
+
+  static_reviewer:        # Qwen3-32B (~18GB Q4)
+    training:
+      per_device_train_batch_size: 1
+      gradient_accumulation_steps: 16
+
+  security_auditor:       # Qwen3-32B (~18GB Q4)
+    training:
+      per_device_train_batch_size: 1
+      gradient_accumulation_steps: 4
+
+  performance_optimizer:  # Qwen3-32B (~18GB Q4)
+    training:
+      per_device_train_batch_size: 1
+      gradient_accumulation_steps: 4
+
+  docs_generator:         # Qwen2.5-7B (~4GB Q4)
+    training:
+      per_device_train_batch_size: 8
+      gradient_accumulation_steps: 2
+
+  orchestrator:           # gpt-oss-20b MoE (~12GB Q4)
+    training:
+      per_device_train_batch_size: 2
+      gradient_accumulation_steps: 8
