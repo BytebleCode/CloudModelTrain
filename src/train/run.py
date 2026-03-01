@@ -1,5 +1,5 @@
 """
-Core training logic: QLoRA fine-tuning with PEFT on A100.
+Core training logic: QLoRA fine-tuning with PEFT on A100/H200.
 """
 
 from __future__ import annotations
@@ -107,7 +107,7 @@ def run_training(
     model_name = cfg["model"]["name_or_path"]
     flash_attn = cfg.get("flash_attention", {}).get("enabled", False)
 
-    # --- Enable TF32 globally on A100 ---
+    # --- Enable TF32 globally on A100/H200 ---
     if cfg["training"].get("tf32", False):
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
@@ -121,7 +121,7 @@ def run_training(
         quantization_config=bnb_config,
         device_map="auto",
         trust_remote_code=cfg["model"].get("trust_remote_code", False),
-        dtype=torch.bfloat16,
+        torch_dtype=torch.bfloat16,
     )
     if flash_attn:
         model_kwargs["attn_implementation"] = "flash_attention_2"

@@ -19,6 +19,7 @@ AGENTS=(
     security_auditor
     performance_optimizer
     docs_generator
+    orchestrator
 )
 
 echo "============================================"

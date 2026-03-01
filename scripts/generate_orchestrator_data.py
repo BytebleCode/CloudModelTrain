@@ -690,14 +690,29 @@ def build_orchestrator_dataset(
         # --- Real HF datasets ---
         per_source_limit = max_samples // 4 if max_samples else None
 
-        swe = download_swe_trajectories(per_source_limit)
-        all_records.extend(swe)
+        try:
+            swe = download_swe_trajectories(per_source_limit)
+            all_records.extend(swe)
+        except ImportError:
+            logger.warning("'datasets' library not installed — skipping SWE trajectories")
+        except Exception as e:
+            logger.warning("SWE trajectories download failed: %s", e)
 
-        fc = download_function_calling(per_source_limit)
-        all_records.extend(fc)
+        try:
+            fc = download_function_calling(per_source_limit)
+            all_records.extend(fc)
+        except ImportError:
+            logger.warning("'datasets' library not installed — skipping function-calling data")
+        except Exception as e:
+            logger.warning("Function-calling download failed: %s", e)
 
-        td = download_task_decomposition(per_source_limit)
-        all_records.extend(td)
+        try:
+            td = download_task_decomposition(per_source_limit)
+            all_records.extend(td)
+        except ImportError:
+            logger.warning("'datasets' library not installed — skipping task decomposition data")
+        except Exception as e:
+            logger.warning("Task decomposition download failed: %s", e)
 
     # Shuffle and limit
     random.shuffle(all_records)

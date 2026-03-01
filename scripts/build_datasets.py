@@ -448,9 +448,9 @@ def _strip_docstring(code: str) -> str:
 def build_orchestrator(max_samples: int | None = None) -> int:
     """
     Resource-aware agent orchestrator training data.
-    Delegates to scripts/generate_orchestrator_data.py for the heavy lifting.
+    Delegates to generate_orchestrator_data.py (same directory) for the heavy lifting.
     """
-    from scripts.generate_orchestrator_data import build_orchestrator_dataset
+    from generate_orchestrator_data import build_orchestrator_dataset
 
     return build_orchestrator_dataset(max_samples=max_samples)
 

@@ -1,14 +1,12 @@
 """
 Configuration loader.
 
-Merges: base.yaml  <-  gpu/<profile>.yaml  <-  agents/<agent>.yaml  <-  CLI overrides
+Merges: base.yaml  <-  agents/<agent>.yaml  <-  gpu/<profile>.yaml  <-  CLI overrides
 Produces a single flat-ish dict consumed by every other module.
 """
 
 from __future__ import annotations
 
-import copy
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -85,16 +83,19 @@ def resolve_config(
             f"Unknown agent '{agent_name}'. Available: {available}"
         )
 
-    # --- merge configs: base <- gpu <- agent <- CLI ---
+    # --- merge configs: base <- agent <- gpu <- CLI ---
+    # GPU profile goes AFTER agent config so hardware-specific batch sizes
+    # override the agent's defaults (e.g. H200 batch_size=4 wins over
+    # code_writer.yaml's batch_size=2).
     cfg = load_base_config()
+
+    agent_cfg = load_agent_config(agent_name)
+    _deep_merge(cfg, agent_cfg)
 
     if gpu_profile:
         gpu_cfg = load_gpu_profile(gpu_profile, agent_name)
         _deep_merge(cfg, gpu_cfg)
         cfg["gpu_profile"] = gpu_profile
-
-    agent_cfg = load_agent_config(agent_name)
-    _deep_merge(cfg, agent_cfg)
 
     if cli_overrides:
         _deep_merge(cfg, cli_overrides)
