@@ -72,7 +72,6 @@ def _build_training_args(cfg: dict, output_dir: str, has_eval: bool = True) -> T
         dataloader_num_workers=tcfg["dataloader_num_workers"],
         dataloader_pin_memory=tcfg["dataloader_pin_memory"],
         report_to=tcfg["report_to"],
-        save_safetensors=True,
         seed=cfg.get("data", {}).get("seed", 42),
     )
 
