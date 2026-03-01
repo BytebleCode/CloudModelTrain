@@ -107,6 +107,63 @@ def build_cli_overrides(args: argparse.Namespace) -> dict:
     return overrides
 
 
+def _load_tokenizer(model_name: str, cfg: dict):
+    """Load tokenizer with fallback for Mistral Tekken format."""
+    from transformers import AutoTokenizer
+
+    trust_remote = cfg["model"].get("trust_remote_code", False)
+
+    # Try standard fast tokenizer first
+    try:
+        return AutoTokenizer.from_pretrained(
+            model_name, trust_remote_code=trust_remote, use_fast=True,
+        )
+    except (KeyError, Exception) as e:
+        logger.warning("Standard tokenizer load failed: %s", e)
+
+    # Fallback: try with from_slow=False to skip slow tokenizer conversion
+    try:
+        logger.info("Trying tokenizer with from_slow=False...")
+        return AutoTokenizer.from_pretrained(
+            model_name, trust_remote_code=trust_remote, use_fast=True, from_slow=False,
+        )
+    except Exception as e:
+        logger.warning("from_slow=False failed: %s", e)
+
+    # Fallback: use mistral-common to build a HF-compatible tokenizer
+    logger.info("Falling back to mistral-common tokenizer...")
+    try:
+        from mistral_common.tokens.tokenizers.mistral import MistralTokenizer as MistralTok
+        from transformers import PreTrainedTokenizerFast
+        import tempfile, json
+
+        # Load via mistral-common
+        mtok = MistralTok.from_model("devstral-small-2505")
+        tekken = mtok.instruct_tokenizer.tokenizer
+
+        # Build a HF-compatible tokenizer from the vocab
+        vocab = tekken.vocab()
+        token_to_id = {v: k for k, v in enumerate(vocab)}
+
+        # Create a minimal tokenizer.json for HF
+        from tokenizers import Tokenizer, models
+        hf_tok = Tokenizer(models.BPE(vocab=token_to_id, merges=[]))
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tok_path = f"{tmpdir}/tokenizer.json"
+            hf_tok.save(tok_path)
+            tokenizer = PreTrainedTokenizerFast(tokenizer_file=tok_path)
+            tokenizer.eos_token = "</s>"
+            tokenizer.pad_token = "</s>"
+            return tokenizer
+    except ImportError:
+        logger.error("Install mistral-common: pip install mistral-common")
+        raise
+    except Exception as e:
+        logger.error("All tokenizer loading methods failed: %s", e)
+        raise
+
+
 def main():
     args = parse_args()
 
@@ -172,14 +229,9 @@ def main():
         return
 
     # --- Prepare dataset ---
-    from transformers import AutoTokenizer
     from src.data.prepare import prepare_dataset
 
-    tokenizer = AutoTokenizer.from_pretrained(
-        cfg["model"]["name_or_path"],
-        trust_remote_code=cfg["model"].get("trust_remote_code", False),
-        use_fast=True,
-    )
+    tokenizer = _load_tokenizer(cfg["model"]["name_or_path"], cfg)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
         tokenizer.pad_token_id = tokenizer.eos_token_id
