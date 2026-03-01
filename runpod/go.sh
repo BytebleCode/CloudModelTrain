@@ -63,13 +63,13 @@ echo "============================================"
 echo ""
 
 # ---- Step 1: Install deps (skip if already done) ----
-SETUP_MARKER="${PROJECT_DIR}/.setup_done_v3"
+SETUP_MARKER="${PROJECT_DIR}/.setup_done_v4"
 if [[ ! -f "$SETUP_MARKER" ]]; then
     echo "[1/4] Installing dependencies..."
     pip install --quiet --upgrade pip
+    pip install --quiet --upgrade torch torchvision torchaudio
     pip install --quiet -r requirements.txt
-    # Force upgrade transformers for Mistral Tekken tokenizer support
-    pip install --quiet --upgrade transformers>=4.46.0
+    pip install --quiet --upgrade transformers accelerate peft bitsandbytes
 
     echo "[2/4] Installing Flash Attention 2..."
     pip install --quiet flash-attn --no-build-isolation 2>/dev/null || {
