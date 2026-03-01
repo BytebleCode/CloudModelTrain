@@ -183,7 +183,10 @@ def build_static_reviewer(max_samples: int | None = None) -> int:
     from datasets import load_dataset
 
     logger.info("Loading HuggingFaceH4/Code-Feedback...")
-    ds = load_dataset("HuggingFaceH4/Code-Feedback", split="train")
+    try:
+        ds = load_dataset("HuggingFaceH4/Code-Feedback", split="train_sft")
+    except Exception:
+        ds = load_dataset("HuggingFaceH4/Code-Feedback", split="train")
 
     python_keywords = {"python", "def ", "import ", "class ", ".py", "pytest", "pip install"}
     records = []
@@ -296,7 +299,10 @@ def build_performance_optimizer(max_samples: int | None = None) -> int:
     # --- Strategy 1: Code-Feedback filtered for optimization ---
     logger.info("Loading HuggingFaceH4/Code-Feedback for optimization examples...")
     try:
-        ds = load_dataset("HuggingFaceH4/Code-Feedback", split="train")
+        try:
+            ds = load_dataset("HuggingFaceH4/Code-Feedback", split="train_sft")
+        except Exception:
+            ds = load_dataset("HuggingFaceH4/Code-Feedback", split="train")
         opt_keywords = {
             "optimize", "optimise", "faster", "slow", "performance", "efficient",
             "efficiency", "speed up", "time complexity", "space complexity",
