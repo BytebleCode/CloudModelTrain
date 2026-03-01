@@ -63,7 +63,7 @@ echo "============================================"
 echo ""
 
 # ---- Step 1: Install deps (skip if already done) ----
-SETUP_MARKER="${PROJECT_DIR}/.setup_done_v4"
+SETUP_MARKER="${PROJECT_DIR}/.setup_done_v5"
 if [[ ! -f "$SETUP_MARKER" ]]; then
     echo "[1/4] Installing dependencies..."
     pip install --quiet --upgrade pip
@@ -72,6 +72,11 @@ if [[ ! -f "$SETUP_MARKER" ]]; then
     pip install --quiet --upgrade transformers accelerate peft bitsandbytes
 
     echo "[2/4] Installing Flash Attention 2..."
+    # Try pre-built wheel first (seconds), fall back to source compile (15 min)
+    TORCH_VER=$(python -c "import torch; print(torch.__version__.split('+')[0])")
+    CUDA_VER=$(python -c "import torch; print(torch.version.cuda.replace('.','')[:3])")
+    echo "  Detected torch=${TORCH_VER} cuda=${CUDA_VER}"
+    pip install --quiet flash-attn 2>/dev/null || \
     pip install --quiet flash-attn --no-build-isolation 2>/dev/null || {
         echo "  [WARN] flash-attn install failed (training still works without it)"
     }
