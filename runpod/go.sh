@@ -90,11 +90,13 @@ fi
 # Show dataset stats
 echo ""
 echo "  Datasets:"
-for f in "${PROJECT_DIR}"/datasets/*/train.jsonl 2>/dev/null; do
+shopt -s nullglob
+for f in "${PROJECT_DIR}"/datasets/*/train.jsonl; do
     agent=$(basename "$(dirname "$f")")
     count=$(wc -l < "$f")
     printf "    %-25s %s records\n" "$agent" "$count"
 done
+shopt -u nullglob
 echo ""
 
 # ---- Step 3: Verify GPU ----
