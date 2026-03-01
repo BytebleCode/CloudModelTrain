@@ -109,6 +109,7 @@ def run_training(
     tokenizer = AutoTokenizer.from_pretrained(
         model_name,
         trust_remote_code=cfg["model"].get("trust_remote_code", False),
+        use_fast=True,
     )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token

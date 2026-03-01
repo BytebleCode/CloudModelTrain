@@ -58,7 +58,7 @@ echo "============================================"
 echo ""
 
 # ---- Step 1: Install deps (skip if already done) ----
-SETUP_MARKER="${PROJECT_DIR}/.setup_done"
+SETUP_MARKER="${PROJECT_DIR}/.setup_done_v2"
 if [[ ! -f "$SETUP_MARKER" ]]; then
     echo "[1/4] Installing dependencies..."
     pip install --quiet --upgrade pip
